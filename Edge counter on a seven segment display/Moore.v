@@ -2,12 +2,15 @@ module Moore (
     input   wire    clk,
     input   wire    rst,
     input   wire    level,
-    output  reg     tick
+    output  reg     rise_tick,
+    output  reg     fall_tick,
+    output  reg     edge_tick
 );
 
 localparam [1:0] zero = 2'b00,
-                 edg  = 2'b01,
-                 one  = 2'b10;
+                 rise = 2'b01,
+                 one  = 2'b10,
+                 fall = 2'b11;
 
 reg [1:0]       current_state,
                 next_state;
@@ -26,19 +29,26 @@ always @(*)
     case (current_state)
         zero: begin
             if (level)
-                next_state = edg;
+                next_state = rise;
         end
 
-        edg: begin
+        rise: begin
             if (level)
                 next_state = one;
             else
-                next_state = zero;
+                next_state = fall;
         end
 
         one: begin
             if (!level)
+                next_state = fall;
+        end
+
+        fall: begin
+            if(!level)
                 next_state = zero;
+            else
+                next_state = rise;
         end
 
         default: next_state = zero;
@@ -47,7 +57,9 @@ end
 
 always @(*)
     begin
-        tick = (current_state == edg);
+        rise_tick = (current_state == rise);
+        fall_tick = (current_state == fall);
+        edge_tick = rise_tick | fall_tick;
     end
 
 endmodule
